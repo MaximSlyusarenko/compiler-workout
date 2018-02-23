@@ -1,4 +1,6 @@
-open GT       
+open GT
+open List
+open Syntax
        
 (* The type for the stack machine instructions *)
 @type insn =
@@ -17,13 +19,38 @@ type prg = insn list
  *)
 type config = int list * Syntax.Stmt.config
 
+(*
+	Evaluates single operation of stack machine
+
+	val evalSingleOperation : config -> insn -> config
+*)
+let evalSingleOperation (stack, (state, input, output)) operation = match operation with
+	| BINOP op -> 
+		let hd1 :: hd2 :: tl = stack in
+		let const1 = Expr.Const hd1 in
+		let const2 = Expr.Const hd2 in
+		let res = Expr.eval state (Expr.Binop (op, const1, const2)) in
+		(res :: tl, (state, input, output))
+	| CONST x -> (x :: stack, (state, input, output))
+	| READ -> ((hd input) :: stack, (state, tl input, output))
+	| WRITE -> (tl input, (state, input, (hd stack) :: output))
+	| LD s -> ((state s) :: stack, (state, input, output))
+	| ST s -> (tl stack, (Expr.update s (hd stack) state, input, output))
+
 (* Stack machine interpreter
 
      val eval : config -> prg -> config
 
    Takes a configuration and a program, and returns a configuration as a result
- *)                         
-let eval _ = failwith "Not yet implemented"
+ *)     
+let rec eval fullConfig program = match program with
+	| [] -> fullConfig
+	| hd :: tl -> eval (evalSingleOperation fullConfig hd) tl
+
+let rec compileExpression expr = match expr with
+	| Expr.Const n -> [CONST n]
+	| Expr.Var s -> [LD s]
+	| Expr.Binop (operation, x, y) -> (compileExpression x) @ (compileExpression y) @ [BINOP operation]
 
 (* Stack machine compiler
 
@@ -33,4 +60,8 @@ let eval _ = failwith "Not yet implemented"
    stack machine
  *)
 
-let compile _ = failwith "Not yet implemented"
+let rec compile statement = match statement with
+	| Stmt.Read s -> [READ ; ST s]
+	| Stmt.Write expr -> (compileExpression expr) @ [WRITE]
+	| Stmt.Assign (s, expr) -> (compileExpression expr) @ [ST s]
+	| Stmt.Seq (st1, st2) -> (compile st1) @ (compile st2)

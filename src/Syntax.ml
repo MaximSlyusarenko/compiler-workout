@@ -2,6 +2,7 @@
    The library provides "@type ..." syntax extension and plugins like show, etc.
 *)
 open GT 
+open List
     
 (* Simple expressions: syntax and semantics *)
 module Expr =
@@ -34,14 +35,37 @@ module Expr =
     *)
     let update x v s = fun y -> if x = y then v else s y
 
-    (* Expression evaluator
+    let intToBool x = x != 0
 
-          val eval : state -> t -> int
+    let boolToInt x = if x then 1 else 0
+
+    (* Expression evaluator
+       val eval : state -> expr -> int
  
        Takes a state and an expression, and returns the value of the expression in 
        the given state.
     *)
-    let eval _ = failwith "Not implemented yet"
+    let rec eval state expression = match expression with
+      | Const x -> x
+      | Var x -> state x
+      | Binop ("!!", x, y) -> evalBooleanFunctionWithBooleanArgs (||) state x y
+      | Binop ("&&", x, y) -> evalBooleanFunctionWithBooleanArgs (&&) state x y
+      | Binop ("==", x, y) -> evalBooleanFunctionWithIntArgs (==) state x y
+      | Binop ("!=", x, y) -> evalBooleanFunctionWithIntArgs (!=) state x y
+      | Binop ("<=", x, y) -> evalBooleanFunctionWithIntArgs (<=) state x y
+      | Binop ("<", x, y) -> evalBooleanFunctionWithIntArgs (<) state x y
+      | Binop (">=", x, y) -> evalBooleanFunctionWithIntArgs (>=) state x y
+      | Binop (">", x, y) -> evalBooleanFunctionWithIntArgs (>) state x y
+      | Binop ("+", x, y) -> evalIntFunctionWithIntArgs (+) state x y
+      | Binop ("-", x, y) -> evalIntFunctionWithIntArgs (-) state x y
+      | Binop ("*", x, y) -> evalIntFunctionWithIntArgs ( * ) state x y
+      | Binop ("/", x, y) -> evalIntFunctionWithIntArgs (/) state x y
+      | Binop ("%", x, y) -> evalIntFunctionWithIntArgs (mod) state x y
+      | _ -> failwith "Wrong expression"
+
+    and evalBooleanFunctionWithBooleanArgs func state x y = boolToInt (func (intToBool (eval state x)) (intToBool (eval state y)))
+    and evalBooleanFunctionWithIntArgs func state x y = boolToInt (func (eval state x) (eval state y))
+    and evalIntFunctionWithIntArgs func state x y = func (eval state x) (eval state y)
 
   end
                     
@@ -65,6 +89,11 @@ module Stmt =
 
        Takes a configuration and a statement, and returns another configuration
     *)
-    let eval _ = failwith "Not implemented yet"
+    let rec eval (state, input, output) expression = match expression with
+      | Read s -> (Expr.update s (hd input) state, tl input, output)
+      | Write expr -> (state, input, (Expr.eval state expr) :: output)
+      | Assign (s, expr) -> (Expr.update s (Expr.eval state expr) state, input, output)
+      | Seq (st1, st2) -> eval (eval (state, input, output) st1) st2
+      | _ -> failwith "Wrong expression"
                                                          
   end
