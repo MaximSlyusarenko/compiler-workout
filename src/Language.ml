@@ -119,7 +119,7 @@ module Stmt =
     *)
     let rec eval (state, input, output) expression = match expression with
       | Read s -> (Expr.update s (hd input) state, tl input, output)
-      | Write expr -> (state, input, output @ [Expr.eval state expr])
+      | Write expr -> (state, input, output @ [(Expr.eval state expr)])
       | Assign (s, expr) -> (Expr.update s (Expr.eval state expr) state, input, output)
       | Seq (st1, st2) -> eval (eval (state, input, output) st1) st2
 
