@@ -50,6 +50,7 @@ let rec compileExpression expr = match expr with
 	| Expr.Binop (operation, x, y) -> (compileExpression x) @ (compileExpression y) @ [BINOP operation]
 
 (* Top-level evaluation
+
      val run : prg -> int list -> int list
    Takes an input stream, a program, and returns an output stream this program calculates
 *)
