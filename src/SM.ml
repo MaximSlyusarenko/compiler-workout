@@ -50,21 +50,17 @@ let rec compileExpression expr = match expr with
 	| Expr.Binop (operation, x, y) -> (compileExpression x) @ (compileExpression y) @ [BINOP operation]
 
 
-
-
-
 (* Top-level evaluation
      val run : prg -> int list -> int list
    Takes an input stream, a program, and returns an output stream this program calculates
 *)
-let run p i = let (_, (_, _, o)) = eval ([], (Expr.empty, i, [])) p in o	
+let run i p = let (_, (_, _, o)) = eval ([], (Language.Expr.empty, i, [])) p in o
 
 (* Stack machine compiler
      val compile : Syntax.Stmt.t -> prg
    Takes a program in the source language and returns an equivalent program for the
    stack machine
  *)
-
 let rec compile statement = match statement with
 	| Stmt.Read s -> [READ ; ST s]
 	| Stmt.Write expr -> (compileExpression expr) @ [WRITE]
