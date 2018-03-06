@@ -26,13 +26,13 @@ type config = int list * Language.Stmt.config
 let evalSingleOperation (stack, (state, input, output)) operation = match operation with
 	| BINOP op -> 
 		let hd1 :: hd2 :: tail = stack in
-		let const1 = Expr.Const hd1 in
-		let const2 = Expr.Const hd2 in
+		let const1 = Expr.Const hd2 in
+		let const2 = Expr.Const hd1 in
 		let res = Expr.eval state (Expr.Binop (op, const1, const2)) in
 		(res :: tail, (state, input, output))
 	| CONST x -> (x :: stack, (state, input, output))
 	| READ -> ((hd input) :: stack, (state, tl input, output))
-	| WRITE -> (tl stack, (state, input, (hd stack) :: output))
+	| WRITE -> (tl stack, (state, input, output @ [(hd stack)]))
 	| LD s -> ((state s) :: stack, (state, input, output))
 	| ST s -> (tl stack, (Expr.update s (hd stack) state, input, output))
 
