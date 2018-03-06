@@ -49,12 +49,13 @@ let rec compileExpression expr = match expr with
 	| Expr.Var s -> [LD s]
 	| Expr.Binop (operation, x, y) -> (compileExpression x) @ (compileExpression y) @ [BINOP operation]
 
-
 (* Top-level evaluation
+
      val run : prg -> int list -> int list
-   Takes an input stream, a program, and returns an output stream this program calculates
+
+   Takes a program, an input stream, and returns an output stream this program calculates
 *)
-let run i p = let (_, (_, _, o)) = eval ([], (Language.Expr.empty, i, [])) p in o
+let run p i = let (_, (_, _, o)) = eval ([], (Language.Expr.empty, i, [])) p in o
 
 (* Stack machine compiler
      val compile : Syntax.Stmt.t -> prg
