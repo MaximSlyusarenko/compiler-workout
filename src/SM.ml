@@ -25,14 +25,14 @@ type config = int list * Language.Stmt.config
 *)
 let evalSingleOperation (stack, (state, input, output)) operation = match operation with
 	| BINOP op -> 
-		let hd1 :: hd2 :: tl = stack in
+		let hd1 :: hd2 :: tail = stack in
 		let const1 = Expr.Const hd1 in
 		let const2 = Expr.Const hd2 in
 		let res = Expr.eval state (Expr.Binop (op, const1, const2)) in
-		(res :: tl, (state, input, output))
+		(res :: tail, (state, input, output))
 	| CONST x -> (x :: stack, (state, input, output))
 	| READ -> ((hd input) :: stack, (state, tl input, output))
-	| WRITE -> (tl input, (state, input, (hd stack) :: output))
+	| WRITE -> (tl stack, (state, input, (hd stack) :: output))
 	| LD s -> ((state s) :: stack, (state, input, output))
 	| ST s -> (tl stack, (Expr.update s (hd stack) state, input, output))
 
@@ -42,7 +42,7 @@ let evalSingleOperation (stack, (state, input, output)) operation = match operat
  *)     
 let rec eval fullConfig program = match program with
 	| [] -> fullConfig
-	| hd :: tl -> eval (evalSingleOperation fullConfig hd) tl
+	| hd :: tail -> eval (evalSingleOperation fullConfig hd) tail
 
 let rec compileExpression expr = match expr with
 	| Expr.Const n -> [CONST n]
@@ -60,7 +60,6 @@ let run p i = let (_, (_, _, o)) = eval ([], (Expr.empty, i, [])) p in o
    Takes a program in the source language and returns an equivalent program for the
    stack machine
  *)
-
 let rec compile statement = match statement with
 	| Stmt.Read s -> [READ ; ST s]
 	| Stmt.Write expr -> (compileExpression expr) @ [WRITE]
