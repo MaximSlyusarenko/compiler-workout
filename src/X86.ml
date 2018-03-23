@@ -138,7 +138,12 @@ let compileSingleOperation env oper = match oper with
     let asmInstructions = movWithMemoryCheck s mem
     in updatedEnv, asmInstructions
   | BINOP op -> compileBinop env op
-  (* TODO *)
+  | LABEL label -> env, [Label label]
+  | JMP label -> env, [Jmp label]
+  | CJMP (condition, label) -> 
+    let s, updatedEnv = env#pop in
+    let asmInstructions = [Binop ("cmp", L 0, s); CJmp (condition, label)]
+    in updatedEnv, asmInstructions
 
 (* Symbolic stack machine evaluator
      compile : env -> prg -> env * instr list

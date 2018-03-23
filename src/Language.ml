@@ -114,7 +114,7 @@ module Stmt =
     (* empty statement                  *) | Skip
     (* conditional                      *) | If     of Expr.t * t * t
     (* loop with a pre-condition        *) | While  of Expr.t * t
-    (* loop with a post-condition       *) (* add yourself TODO*)  with show
+    (* loop with a post-condition       *) | Repeat of t * Expr.t  with show
                                                                     
     (* The type of configuration: a state, an input stream, an output stream *)
     type config = Expr.state * int list * int list 
@@ -131,19 +131,41 @@ module Stmt =
       | Write   e       -> (st, i, o @ [Expr.eval st e])
       | Assign (x, e)   -> (Expr.update x (Expr.eval st e) st, i, o)
       | Seq    (s1, s2) -> eval (eval conf s1) s2
-      (* TODO *)
+      | Skip -> conf
+      | If (expr, thenIf, elseIf) -> if (Expr.eval st expr) <> 0 then (eval conf thenIf) else (eval conf elseIf)
+      | While (expr, loopStmt) -> recursiveWhileLoop conf expr loopStmt
+      | Repeat (loopStmt, expr) ->  recursiveWhileLoop (eval conf loopStmt) expr loopStmt
+    and recursiveWhileLoop ((st, _, _) as conf) expr loopStmt = if (Expr.eval st expr) != 0 then recursiveWhileLoop (eval conf loopStmt) expr loopStmt else conf
+
+    let rec parseElIfActions elIfActions elseAction =  match elIfActions with
+    | [] -> elseAction
+    | (condition, action)::tailElIfActions -> If (condition, action, parseElIfActions tailElIfActions elseAction)
+
+    let parseElse elIfActions elseAction = 
+      let elseActionParsed = match elseAction with
+      | None -> Skip
+      | Some action -> action
+    in parseElIfActions elIfActions elseActionParsed
                                
-    (* Statement parser *)
     (* Statement parser *)
     ostap (
       parse:
         s:stmt ";" ss:parse {Seq (s, ss)}
       | stmt;
+      
       stmt:
         "read" "(" x:IDENT ")"          {Read x}
       | "write" "(" e:!(Expr.parse) ")" {Write e}
       | x:IDENT ":=" e:!(Expr.parse)    {Assign (x, e)}
-      (* TODO *)            
+      | %"skip"                         {Skip}
+      | %"if" condition: !(Expr.parse) %"then" action:parse 
+        elIfActions:(%"elif" !(Expr.parse) %"then" parse)*
+        elseAction:(%"else" parse)?
+        %"fi"                                              { If (condition, action, parseElse elIfActions elseAction)}
+      | %"while" condition: !(Expr.parse) %"do" action:parse %"od"  { While (condition, action) }
+      | %"repeat" action:parse %"until" condition: !(Expr.parse)    { Repeat (action, condition) }
+      | %"for" initialize:parse "," condition: !(Expr.parse)
+        "," increment:parse %"do" action:parse %"od"             { Seq (initialize, While (condition, Seq (action, increment))) }
     )
       
   end
