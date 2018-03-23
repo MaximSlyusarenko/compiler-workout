@@ -24,7 +24,7 @@ type config = int list * Stmt.config
 
 let checkConditionalJump condition value = match condition with
 | "nz" -> value <> 0
-| "z" -> value == 0
+| "z" -> value = 0
 
 (* Stack machine interpreter
      val eval : env -> config -> prg -> config
@@ -34,18 +34,17 @@ let checkConditionalJump condition value = match condition with
 let rec eval env ((stack, ((st, i, o) as c)) as conf) = function
 | [] -> conf
 | insn :: prg' ->
-   eval env
      (match insn with
-      | BINOP op -> let y::x::stack' = stack in (Expr.to_func op x y :: stack', c)
-      | READ     -> let z::i'        = i     in (z::stack, (st, i', o))
-      | WRITE    -> let z::stack'    = stack in (stack', (st, i, o @ [z]))
-      | CONST i  -> (i::stack, c)
-      | LD x     -> (st x :: stack, c)
-      | ST x     -> let z::stack'    = stack in (stack', (Expr.update x z st, i, o))
+      | BINOP op -> let y::x::stack' = stack in eval env (Expr.to_func op x y :: stack', c) prg'
+      | READ     -> let z::i' = i     in eval env (z::stack, (st, i', o)) prg'
+      | WRITE    -> let z::stack' = stack in eval env (stack', (st, i, o @ [z])) prg'
+      | CONST i  -> eval env (i::stack, c) prg'
+      | LD x     -> eval env (st x :: stack, c) prg'
+      | ST x     -> let z::stack' = stack in eval env (stack', (Expr.update x z st, i, o)) prg'
       | LABEL s  -> eval env conf prg'
       | JMP name -> eval env conf (env#labeled name)
       | CJMP (condition, name) -> eval env (tl stack, c) (if (checkConditionalJump condition (hd stack)) then (env#labeled name) else prg')
-     ) prg'
+     )
 
 (* Top-level evaluation
      val run : prg -> int list -> int list
