@@ -196,7 +196,7 @@ let compile env code =
               env, [Binop ("cmp", L 0, x); CJmp  (s, l)]
           | BEGIN (func, args, locals) -> 
             let enteredEnv = env#enter func args locals in
-            enteredEnv, [Push ebp; Mov (esp, ebp); Binop ("-", M ("$" ^ env#lsize), esp)]
+            enteredEnv, [Push ebp; Mov (esp, ebp); Binop ("-", M ("$" ^ enteredEnv#lsize), esp)]
           | END ->
             env, [Label env#epilogue; Mov (ebp, esp); Pop ebp; Ret]
           | RET ifSome -> if ifSome then let x, newEnv = env#pop in newEnv, [Mov (x, eax); Jmp env#epilogue] else env, [Jmp env#epilogue]
