@@ -143,4 +143,4 @@ let compileAllFuncDefinitions labels defs =
 let compile (defs, p) = let endLabel, labels = (new labels)#new_label in
   let labels1, compiledProgram = compileWithLabels labels p in 
   let labels2, allFuncDefinitions = compileAllFuncDefinitions labels1 defs in
-  (LABEL "main" :: compiledProgram @ [LABEL endLabel]) @ [END] @ (List.concat allFuncDefinitions)
+  (compiledProgram @ [LABEL endLabel]) @ [END] @ (List.concat allFuncDefinitions)
