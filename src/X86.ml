@@ -76,6 +76,7 @@ let show instr =
   | Label  l           -> Printf.sprintf "%s:\n" l
   | Jmp    l           -> Printf.sprintf "\tjmp\t%s" l
   | CJmp  (s , l)      -> Printf.sprintf "\tj%s\t%s" s l
+  | Meta   s           -> Printf.sprintf "%s\n" s
 
 (* Opening stack machine to use instructions without fully qualified names *)
 open SM
