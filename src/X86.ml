@@ -198,7 +198,7 @@ let compile env code =
             let enteredEnv = env#enter func args locals in
             enteredEnv, [Push ebp; Mov (esp, ebp); Binop ("-", M ("$" ^ enteredEnv#lsize), esp)]
           | END ->
-            env, [Label env#epilogue; Mov (ebp, esp); Pop ebp; Ret]
+            env, [Label env#epilogue; Mov (ebp, esp); Pop ebp; Ret; Meta (Printf.sprintf "\t.set\t%s,\t%d" env#lsize (env#allocated * word_size))]
           | RET ifSome -> if ifSome then let x, newEnv = env#pop in newEnv, [Mov (x, eax); Jmp env#epilogue] else env, [Jmp env#epilogue]
           | CALL (func, argsNum, p) -> 
             let pushLiveRegisters = List.map (fun reg -> Push reg) env#live_registers in
