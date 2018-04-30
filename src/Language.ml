@@ -259,7 +259,7 @@ module Stmt =
          let (st, i, o, Some v) = Expr.eval env (st, i, o, None) e in
          eval env (update st x v is, i, o, None) Skip k
       | Seq    (s1, s2) -> eval env conf (evalSeq s2 k) s1
-      | Skip -> match k with Skip -> conf | something -> eval env conf Skip k
+      | Skip -> (match k with Skip -> conf | something -> eval env conf Skip k)
       | If (expr, thenIf, elseIf) -> let (_, _, _, Some x) as conf = Expr.eval env conf expr in if Value.to_int x <> 0 then (eval env conf k thenIf) else (eval env conf k elseIf)
       | While (expr, loopStmt) -> let (_, _, _, Some x) as conf = Expr.eval env conf expr in
         if (Value.to_int x = 0) then eval env conf Skip k else eval env conf (evalSeq stmt k) loopStmt
