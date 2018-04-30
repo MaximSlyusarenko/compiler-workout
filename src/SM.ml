@@ -60,7 +60,7 @@ let rec eval env ((cstack, stack, ((st, i, o) as c)) as conf) = function
       | STA (x, n) -> let v::ind, stack' = split (n + 1) stack in eval env (cstack, stack', (Language.Stmt.update st x v (List.rev ind), i, o)) prg'
       | LABEL s  -> eval env conf prg'
       | JMP name -> eval env conf (env#labeled name)
-      | CJMP (condition, name) -> eval env conf (if (checkConditionalJump condition (hd stack)) then (env#labeled name) else prg')
+      | CJMP (condition, name) -> eval env (cstack, tl stack, c) (if (checkConditionalJump condition (hd stack)) then (env#labeled name) else prg')
       | CALL (f, n, p) -> if env#is_label f then eval env ((prg', st)::cstack, stack, c) (env#labeled f) else eval env (env#builtin conf f n p) prg'
       | BEGIN (_, args, locals) -> let resolvedArgumentsMapping, newStack = resolveArgumentsMapping [] args stack 
         in eval env (cstack, newStack, (List.fold_left (fun s (x, v) -> State.update x v s) (State.enter st (args @ locals)) resolvedArgumentsMapping, i, o)) prg'
